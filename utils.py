@@ -30,10 +30,8 @@ def process_candle_time_step(message, bot, user_purchase_params, user_credential
         bot.reply_to(message, "Invalid choice. Use /expiration to try again.")
         return
 
-    # user_purchase_params[chat_id]["duration"] = duration
     user_purchase_params[chat_id]["candle_time"] = candle_time
 
-    # Verificar se as credenciais estão presentes
     email = user_credentials.get(chat_id, {}).get("email")
     password = user_credentials.get(chat_id, {}).get("password")
     account_type = user_credentials.get(chat_id, {}).get("account_type")
@@ -42,14 +40,11 @@ def process_candle_time_step(message, bot, user_purchase_params, user_credential
         bot.reply_to(message, "Please provide your credentials using the /connect command.")
         return
 
-    # Chamar a função connect_iq_option para obter a API e o markup da próxima etapa
     iq_api, _, success = connect_iq_option(email, password, account_type)
 
-    # Verificar se a conexão foi bem-sucedida
     if iq_api:
         bot.reply_to(message, "Connected successfully!")
 
-        # Obter valores do user_purchase_params
         marker = user_purchase_params.get(chat_id, {}).get("marker")
         input_value = user_purchase_params.get(chat_id, {}).get("input_value")
         direction = user_purchase_params.get(chat_id, {}).get("direction")
@@ -58,15 +53,12 @@ def process_candle_time_step(message, bot, user_purchase_params, user_credential
         gale_multiplier = user_purchase_params.get(chat_id, {}).get("gale_multiplier")
         candle_time = user_purchase_params.get(chat_id, {}).get("candle_time")
 
-        # Verificar se os valores necessários estão presentes
         if not all([marker, input_value, direction, type, gale_quantity, gale_multiplier]):
             bot.reply_to(message, "Incomplete purchase parameters. Use /purchase to start a new purchase.")
             return
 
-        # Chamar a função de compra
         result = purchase_with_gale(iq_api, marker, input_value, direction, candle_time, type, gale_quantity, gale_multiplier)
         bot.send_message(chat_id, result["result"])
-        # return jsonify(result)
         return result
     
     else:
