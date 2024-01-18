@@ -64,6 +64,20 @@ The project was developed using the following technologies and tools:
 - Flask
 - IQ Option API
 
+## :rocket: Archteture
+
+```bash
+- lacustrebot/
+  - iqoptionapi/
+  - .gitignore
+  - config.py
+  - iqoption.py
+  - main.py
+  - README.md
+  - telegram_bot.py
+  - utils.py
+```
+
 ## :checkered_flag: Executing Project
 
 To run the LacustreBot project on your computer, follow the steps below using the terminal or command prompt:
@@ -73,7 +87,7 @@ To run the LacustreBot project on your computer, follow the steps below using th
 $ git clone git@github.com:Anderson-Andre-P/lacustrebot.git
 
 # Navigate to the project directory
-$ cd './BOT'
+$ cd './lacustrebot'
 
 # Create a virtual environment (optional but recommended)
 $ python -m venv venv
