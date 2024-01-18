@@ -78,6 +78,22 @@ The project was developed using the following technologies and tools:
   - utils.py
 ```
 
+### Description of archteture
+
+In the lacustrebot folder you have all the necessary files to make the bot work!
+
+The iqoptionapi folder is provided on GitHub of the IQ Option API, it is quite extensive and necessary because it contains the endpoints for making login requests, user validation, pulling data, sending data, etc. Do not touch it and, if necessary, get the complete file from the [official repository](https://github.com/iqoptionapi/iqoptionapi).
+
+The config.py file only contains the settings necessary for the bot to work, in this case it is just the token that I chose to make available so that you can show it to the client. I emphasize that creating it is simple, just [follow this bot father tutorial](https://core.telegram.org/bots/tutorial).
+
+The iqoption.py file is responsible for the main IQ Option functions that are used (connect and buy).
+
+The main.py file is the initial one for the application, it is what you run to make the bot work on Telegram.
+
+The telegram_bot.py file is used to "store" the bot's functions and their respective commands. In the future, it would be ideal to remove the commands from this file and leave only the functions so that the algorithm has greater maintainability.
+
+The utils.py file has the helper functions that can be used in various parts of the code.
+
 ## :checkered_flag: Executing Project
 
 To run the LacustreBot project on your computer, follow the steps below using the terminal or command prompt:
