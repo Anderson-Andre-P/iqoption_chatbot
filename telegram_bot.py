@@ -1,8 +1,9 @@
 import telebot
-from telebot.types import ReplyKeyboardMarkup, KeyboardButton, ReplyKeyboardRemove
 import config
 import iqoption
 from utils import choose_candle_time
+
+from telebot.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardRemove
 
 bot = telebot.TeleBot(config.API_TOKEN)
 
@@ -39,10 +40,13 @@ def process_password_step(message):
     if success:
         user_choices[chat_id]["account_type"] = account_type
         user_credentials[chat_id] = {"email": email, "password": password, "account_type": account_type}
-        markup = ReplyKeyboardMarkup(resize_keyboard=True)
-        markup.add(KeyboardButton('demo'), KeyboardButton('real'))
+
+        markup = InlineKeyboardMarkup(row_width=2)
+        markup.add(InlineKeyboardButton('demo', callback_data='demo'), InlineKeyboardButton('real', callback_data='real'))
         bot.send_message(chat_id, "Connected successfully! Choose the account to connect:", reply_markup=markup)
-        bot.register_next_step_handler(message, process_account_choice_step)
+        # bot.register_next_step_handler(message, process_account_choice_step)
+        bot.register_next_step_handler(message, lambda message: process_account_choice_step(message, 'real' if message.text.lower() == 'real' else 'demo'))
+
     else:
         bot.reply_to(message, "Connection fail. Check your credentials.")
         markup = ReplyKeyboardMarkup(resize_keyboard=True)
@@ -50,33 +54,49 @@ def process_password_step(message):
         bot.send_message(chat_id, "Do you want to try connecting again?", reply_markup=markup)
         bot.register_next_step_handler(message, process_retry_connection_step)
 
+@bot.callback_query_handler(func=lambda call: True)
+def handle_callback_query(call):
+    chat_id = call.message.chat.id
+    choice = call.data
+
+    if choice == "demo" or choice == "real":
+        user_choices[chat_id]["account_choice"] = choice
+        process_account_choice_step(call.message, call.data)
+    else:
+        bot.reply_to(call.message, "Invalid choice. Use /connect to try again.")
+
 def process_retry_connection_step(message):
     if message.text.lower() == '/connect':
         handle_connect_command(message)
     else:
         bot.reply_to(message, "Invalid command. Use /connect to try again.")
 
-def process_account_choice_step(message):
+def process_account_choice_step(message, choice):
     chat_id = message.chat.id
-    account_choice = message.text.lower()
+    account_choice = choice
+
     if account_choice not in ['demo', 'real']:
         bot.reply_to(message, "Invalid choice. Use /connect to try again.")
         return
+    
     user_choices[chat_id]["account_choice"] = account_choice
     iq_api, _, success = iqoption.connect_iq_option(user_choices[chat_id]["email"], user_choices[chat_id]["password"], user_choices[chat_id]["account_choice"])
+
     if success:
         bot.reply_to(message, f"Connected successfully! Account: {user_choices[chat_id]['account_choice']}")
         markup = ReplyKeyboardRemove()
         bot.send_message(chat_id, "Account type chosen! Use /purchase to perform operations.", reply_markup=markup)
     else:
         bot.reply_to(message, "Connection fail. Check your credentials.")
-
+        
 @bot.message_handler(commands=['disconnect'])
 def handle_disconnect_command(message):
     chat_id = message.chat.id
 
     if chat_id in user_credentials:
         del user_credentials[chat_id]
+        if chat_id in user_choices:
+            del user_choices[chat_id]
         bot.reply_to(message, "Successfully disconnected.")
     else:
         bot.reply_to(message, "You are not currently logged in. Use /connect to connect.")
@@ -86,15 +106,12 @@ def handle_purchase_command(message):
     chat_id = message.chat.id
 
     if chat_id not in user_credentials:
-        print(f"DEBUG: User {chat_id} did not provide credentials. Redirecting to /connect.")
         bot.reply_to(message, "You need to connect first. Use /connect to connect.")
         return
 
     if chat_id in user_purchase_params:
-        print(f"DEBUG: User {chat_id} has already provided purchasing parameters previously.")
         bot.reply_to(message, "You have already provided the purchasing parameters previously. Use /reset_purchase to start a new purchase.")
     else:
-        print(f"DEBUG: Prompting the user {chat_id} send the active for purchase.")
         bot.reply_to(message, "Please send the active for purchase.")
         bot.register_next_step_handler(message, process_marker_step)
 

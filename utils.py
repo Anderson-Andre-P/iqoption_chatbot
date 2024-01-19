@@ -2,7 +2,7 @@ from iqoption import connect_iq_option, purchase_with_gale
 from telebot.types import ReplyKeyboardMarkup, KeyboardButton
 
 def choose_candle_time(message, bot, user_purchase_params, user_credentials):
-    print("Arrived at the function 'choose_candle_time'")
+    # print("Arrived at the function 'choose_candle_time'")
     chat_id = message.chat.id
     markup = ReplyKeyboardMarkup(resize_keyboard=True)
     markup.add(KeyboardButton('1 minute'))
@@ -14,7 +14,7 @@ def choose_candle_time(message, bot, user_purchase_params, user_credentials):
     bot.register_next_step_handler(message, process_candle_time_step, bot, user_purchase_params, user_credentials)
 
 def process_candle_time_step(message, bot, user_purchase_params, user_credentials):
-    print("Arrived at the function 'process_candle_time_step'")
+    # print("Arrived at the function 'process_candle_time_step'")
     chat_id = message.chat.id
     candle_time = message.text
 
