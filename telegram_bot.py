@@ -40,13 +40,9 @@ def process_password_step(message):
     if success:
         user_choices[chat_id]["account_type"] = account_type
         user_credentials[chat_id] = {"email": email, "password": password, "account_type": account_type}
-
         markup = InlineKeyboardMarkup(row_width=2)
         markup.add(InlineKeyboardButton('demo', callback_data='demo'), InlineKeyboardButton('real', callback_data='real'))
         bot.send_message(chat_id, "Connected successfully! Choose the account to connect:", reply_markup=markup)
-        # bot.register_next_step_handler(message, process_account_choice_step)
-        bot.register_next_step_handler(message, lambda message: process_account_choice_step(message, 'real' if message.text.lower() == 'real' else 'demo'))
-
     else:
         bot.reply_to(message, "Connection fail. Check your credentials.")
         markup = ReplyKeyboardMarkup(resize_keyboard=True)
