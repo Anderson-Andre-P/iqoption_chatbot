@@ -295,7 +295,7 @@ def handle_reset_choice_command(message):
     else:
         bot.reply_to(message, "You haven't made a choice yet. Use /choose_candle_time to get started.")
 
-@bot.message_handler(commands=['expiration'])
+@bot.message_handler(commands=['choose_candle_time'])
 def handle_expiration_command(message):
     chat_id = message.chat.id
 
@@ -376,7 +376,6 @@ Trading Commands:
 /purchase - Starts the process of purchasing an asset.
 /reset_purchase - Reset purchase information for the last asset.
 /reset_choice - Resets the user's choice.
-/expiration - Shows the expiration time chosen for the candle.
 /choose_candle_time - Allows you to choose the candle expiration time (1, 5 or 15 minutes).
 
 /start - Starts the virtual assistant.
@@ -391,8 +390,6 @@ Trading Commands:
 /purchase - Starts the process of purchasing an asset.
 /reset_purchase - Resets the purchase information for the last asset.
 /reset_choice - Resets user choice.
-/expiration - Shows the chosen candle expiration time.
-/choose_candle_time - Allows you candle expiration time (1, 5 or 15 minutes).
 
 Unimplemented Commands 🔴
 
@@ -448,7 +445,7 @@ Welcome to the tutorial for using this bot on the IQ Option platform! We are her
     - When you are ready to make a purchase of financial assets, use the /purchase command. The bot will follow the Gale strategy to help with your operations.
 
 4. Time Management:
-    - Customize the candle expiration time for your trades with the /expiration command. This allows you to tailor your trades to your preferences.
+    - Customize the candle expiration time for your trades with the /choose_candle_time command. This allows you to tailor your trades to your preferences.
 
 5. Assistance and Support:
     - This bot is here to provide support and assistance during your trades on IQ Option. Don't hesitate to ask questions or request guidance.
