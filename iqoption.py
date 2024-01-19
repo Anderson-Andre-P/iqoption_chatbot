@@ -34,13 +34,12 @@ def purchase_with_gale(API, marker, input_value, direction, expiration, type, ga
 
                 if status:
                     if result > 0:
-                        return {"result": f"🟢 WIN ${round(result, 2)}.", "amount": round(result, 2)}
+                        return {"result": f"✅ Operation With Gain ✅\nValue: ${round(result, 2)}.", "amount": round(result, 2)}
                     elif result == 0:
-                        return {"result": f"🔵 DRAW ${round(result, 2)}.", "amount": round(result, 2)}
+                        return {"result": f"🔷 Operation With Draw 🔷\nValue: ${round(result, 2)}.", "amount": round(result, 2)}
                     else:
                         loss_amount = abs(result)
-                        print(f'Result: LOSS -${round(loss_amount, 2)}.')
-                        loss_info = f"🔴 LOSS -${round(loss_amount, 2)}.\nRemaining attempts: {gale_quantity - attempt - 1}.\nMultiplier: {gale_multiplier}."
+                        loss_info = f"❌ Operation With Loss ❌\nValue: -${round(loss_amount, 2)}\nRemaining Attempts: {gale_quantity - attempt - 1}\nMultiplier: {gale_multiplier}"
                         print(loss_info)
                         bot.send_message(chat_id, loss_info)
                         break
