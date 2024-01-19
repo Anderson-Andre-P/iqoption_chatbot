@@ -58,6 +58,10 @@ def handle_callback_query(call):
     if choice == "demo" or choice == "real":
         user_choices[chat_id]["account_choice"] = choice
         process_account_choice_step(call.message, call.data)
+    elif choice == "call" or choice == "put":
+        handle_direction_choice(call)
+    elif choice == "binary" or choice == "digital":
+        handle_purchase_type_choice(call)
     else:
         bot.reply_to(call.message, "Invalid choice. Use /connect to try again.")
 
@@ -132,8 +136,41 @@ def process_input_value_step(message):
 
     user_purchase_params[chat_id]["input_value"] = input_value
 
-    bot.reply_to(message, "Excellent! Now, please send the purchase direction (call/put).")
-    bot.register_next_step_handler(message, process_direction_step)
+    markup = InlineKeyboardMarkup(row_width=2)
+    call_button = InlineKeyboardButton("Call", callback_data="call")
+    put_button = InlineKeyboardButton("Put", callback_data="put")
+    markup.add(call_button, put_button)
+
+    bot.send_message(chat_id, "Please choose the purchase direction:", reply_markup=markup)
+
+@bot.callback_query_handler(func=lambda call: call.data in ["call", "put"])
+def handle_direction_choice(call):
+    chat_id = call.message.chat.id
+    direction = call.data
+    user_purchase_params[chat_id]["direction"] = direction
+
+    bot.answer_callback_query(call.id, f"You have chosen: {direction.capitalize()}")
+
+    bot.send_message(chat_id, f"You have chosen: {direction.capitalize()}")
+
+    markup = InlineKeyboardMarkup(row_width=2)
+    binary_button = InlineKeyboardButton("Binary", callback_data="binary")
+    digital_button = InlineKeyboardButton("Digital", callback_data="digital")
+    markup.add(binary_button, digital_button)
+
+    bot.send_message(chat_id, "Please choose the purchase type:", reply_markup=markup)
+
+@bot.callback_query_handler(func=lambda call: call.data in ["binary", "digital"])
+def handle_purchase_type_choice(call):
+    chat_id = call.message.chat.id
+    purchase_type = call.data
+    user_purchase_params[chat_id]["type"] = purchase_type
+
+    bot.answer_callback_query(call.id, f"You have chosen: {purchase_type.capitalize()}")
+    bot.send_message(chat_id, f"You have chosen: {purchase_type.capitalize()}")
+
+    bot.send_message(chat_id, "Please send the number of Gale operations.")
+    bot.register_next_step_handler_by_chat_id(chat_id, process_gale_quantity_step)
 
 def process_direction_step(message):
     chat_id = message.chat.id
@@ -150,13 +187,16 @@ def process_direction_step(message):
 
 def process_type_step(message):
     chat_id = message.chat.id
-    type = message.text.lower()
+    type_choice = message.text.lower()
 
-    if type not in ['binary', 'digital']:
+    print(f'Type Choice {type_choice}\n\n\n')
+    print(f'Message {message}\n\n\n')
+
+    if type_choice not in ['binary', 'digital']:
         bot.reply_to(message, "The purchase type must be 'binary' or 'digital'.")
         return
 
-    user_purchase_params[chat_id]["type"] = type
+    user_purchase_params[chat_id]["type"] = type_choice
 
     bot.reply_to(message, "Excellent! Now please send the amount of Gale operations.")
     bot.register_next_step_handler(message, process_gale_quantity_step)
