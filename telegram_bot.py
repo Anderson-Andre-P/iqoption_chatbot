@@ -41,7 +41,7 @@ def process_password_step(message):
         user_choices[chat_id]["account_type"] = account_type
         user_credentials[chat_id] = {"email": email, "password": password, "account_type": account_type}
         markup = InlineKeyboardMarkup(row_width=2)
-        markup.add(InlineKeyboardButton('demo', callback_data='demo'), InlineKeyboardButton('real', callback_data='real'))
+        markup.add(InlineKeyboardButton('Demo', callback_data='demo'), InlineKeyboardButton('Real', callback_data='real'))
         bot.send_message(chat_id, "Connected successfully! Choose the account to connect:", reply_markup=markup)
     else:
         bot.reply_to(message, "Connection fail. Check your credentials.")
@@ -62,6 +62,8 @@ def handle_callback_query(call):
         handle_direction_choice(call)
     elif choice == "binary" or choice == "digital":
         handle_purchase_type_choice(call)
+    elif choice in ['1 minute', '5 minutes', '15 minutes']:
+        handle_candle_time_choice(call)
     else:
         bot.reply_to(call.message, "Invalid choice. Use /connect to try again.")
 
@@ -172,19 +174,6 @@ def handle_purchase_type_choice(call):
     bot.send_message(chat_id, "Please send the number of Gale operations.")
     bot.register_next_step_handler_by_chat_id(chat_id, process_gale_quantity_step)
 
-def process_direction_step(message):
-    chat_id = message.chat.id
-    direction = message.text.lower()
-
-    if direction not in ['call', 'put']:
-        bot.reply_to(message, "The purchase direction must be 'call' or 'put'.")
-        return
-
-    user_purchase_params[chat_id]["direction"] = direction
-
-    bot.reply_to(message, "Excellent! Now, please send the purchase type (binary/digital).")
-    bot.register_next_step_handler(message, process_type_step)
-
 def process_type_step(message):
     chat_id = message.chat.id
     type_choice = message.text.lower()
@@ -240,52 +229,41 @@ def handle_reset_purchase_command(message):
     else:
         bot.reply_to(message, "You have not provided purchasing parameters. Use /purchase to start a new purchase.")
 
-@bot.message_handler(commands=['choose_candle_time'])
-def handle_choose_candle_time_command(message):
-    chat_id = message.chat.id
+@bot.callback_query_handler(func=lambda call: call.data in ['1 minute', '2 minutes', '5 minutes', '10 minutes'])
+def handle_candle_time_choice(call):
+    chat_id = call.message.chat.id
+    candle_time = call.data
 
-    if chat_id in user_choices:
-        bot.reply_to(message, "You have already chosen the expiration time previously. Use /reset_choice to make a new choice.")
-    else:
-        markup = ReplyKeyboardMarkup(resize_keyboard=True)
-        markup.add(KeyboardButton('1 minute'))
-        markup.add(KeyboardButton('2 minutes'))
-        markup.add(KeyboardButton('5 minutes'))
-        markup.add(KeyboardButton('10 minutes'))
-
-        bot.reply_to(message, "Please choose the candle expiration time:", reply_markup=markup)
-        bot.register_next_step_handler(message, process_candle_time_step)
-
-def process_candle_time_step(message):
-    chat_id = message.chat.id
-    candle_time = message.text
+    print(f'chat id: {chat_id}\n\n')
+    print(f'cancle time: {candle_time}\n\n')
 
     if candle_time == '1 minute':
-        candle_time = 1
-    elif candle_time == '2 minutes':
-        candle_time = 2
+        candle_time_value = 1
     elif candle_time == '5 minutes':
-        candle_time = 5
-    elif candle_time == '10 minutes':
-        candle_time = 10
+        candle_time_value = 5
+    elif candle_time == '15 minutes':
+        candle_time_value = 15
     else:
-        bot.reply_to(message, "Invalid choice. Use /expiration to try again.")
+        bot.answer_callback_query(call.id, "Invalid choice.")
         return
 
-    user_purchase_params[chat_id]["candle_time"] = candle_time
+    user_purchase_params[chat_id]["candle_time"] = candle_time_value
+    bot.answer_callback_query(call.id, f"Candle time chosen: {candle_time}")
+    bot.send_message(chat_id, f"You have chosen a candle expiration time of {candle_time}.")
 
     email = user_credentials.get(chat_id, {}).get("email")
     password = user_credentials.get(chat_id, {}).get("password")
     account_type = user_credentials.get(chat_id, {}).get("account_type")
 
     if not email or not password or not account_type:
-        bot.reply_to(message, "Please provide your credentials using the /connect command.")
+        bot.reply_to(call.message, "Please provide your credentials using the /connect command.")
         return
 
     iq_api, _, success = iqoption.connect_iq_option(email, password, account_type)
 
     if iq_api:
-        bot.reply_to(message, "Connected successfully!")
+        bot.reply_to(call.message, "Operation started.")
+        bot.reply_to(call.message, "Waiting for the operation to complete...")
 
         purchase_params = user_purchase_params.get(chat_id, {})
         marker = user_purchase_params.get(chat_id, {}).get("marker")
@@ -302,12 +280,10 @@ def process_candle_time_step(message):
         else:
             bot.send_message(chat_id, "Incomplete purchase parameters.")
 
-        result = iqoption.purchase_with_gale(iq_api, marker, input_value, direction, candle_time, type, gale_quantity, gale_multiplier, bot, chat_id)
-        bot.send_message(chat_id, result["result"])
         return result
     
     else:
-        bot.reply_to(message, "Error connecting. Check your credentials.")
+        bot.reply_to(call.message, "Error connecting. Check your credentials.")
 
 @bot.message_handler(commands=['reset_choice'])
 def handle_reset_choice_command(message):
