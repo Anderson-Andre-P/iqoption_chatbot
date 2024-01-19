@@ -297,12 +297,12 @@ def process_candle_time_step(message):
         candle_time = user_purchase_params.get(chat_id, {}).get("candle_time")
 
         if all([marker, input_value, direction, type, gale_quantity, gale_multiplier, candle_time]):
-            result = iqoption.purchase_with_gale(iq_api, marker, input_value, direction, candle_time, type, gale_quantity, gale_multiplier)
+            result = iqoption.purchase_with_gale(iq_api, marker, input_value, direction, candle_time, type, gale_quantity, gale_multiplier, bot, chat_id)
             bot.send_message(chat_id, result["result"])
         else:
             bot.send_message(chat_id, "Incomplete purchase parameters.")
 
-        result = iqoption.purchase_with_gale(iq_api, marker, input_value, direction, candle_time, type, gale_quantity, gale_multiplier)
+        result = iqoption.purchase_with_gale(iq_api, marker, input_value, direction, candle_time, type, gale_quantity, gale_multiplier, bot, chat_id)
         bot.send_message(chat_id, result["result"])
         return result
     

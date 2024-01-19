@@ -57,7 +57,7 @@ def process_candle_time_step(message, bot, user_purchase_params, user_credential
             bot.reply_to(message, "Incomplete purchase parameters. Use /purchase to start a new purchase.")
             return
 
-        result = purchase_with_gale(iq_api, marker, input_value, direction, candle_time, type, gale_quantity, gale_multiplier)
+        result = purchase_with_gale(iq_api, marker, input_value, direction, candle_time, type, gale_quantity, gale_multiplier, bot, chat_id)
         bot.send_message(chat_id, result["result"])
         return result
     
