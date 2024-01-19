@@ -316,16 +316,146 @@ def handle_expiration_command(message):
 
     choose_candle_time(message, bot, user_purchase_params, user_credentials)
 
-@bot.message_handler(commands=['help', 'start'])
+@bot.message_handler(commands=['start'])
 def send_welcome(message):
-    bot.reply_to(message, """\
-Hey! I am your assistant for operations at IQ Option. 
+    start_message =  """
+🤖 Hello! I'm your operations assistant at IQ Option.
 
-Available commands:
-/connect - Connect to IQ Option
-/purchase - Make a purchase with Gale strategy
-/expiration - Choose the candle expiration time
-""")
+To start operations via IQ Option you need to type the /connect command and provide your access data to log in.
+
+Or if you prefer, you can use the commands below:
+
+/help to ask for help
+/commands to get a list of commands available in this chat
+/informations to access relevant Bot information
+/tutorial to access a quick tutorial.
+"""
+    bot.reply_to(message, start_message)
+    
+@bot.message_handler(commands=['help'])
+def send_help(message):
+    help_message = """
+🤖 How can I help you today?
+
+Here are some useful commands you can use:
+
+/help - Displays this help message.
+/start - Starts the conversation with the bot.
+/commands - Shows a list of available commands.
+/informations - Provides information about the bot.
+/tutorial - Provides information about the bot.
+
+If you have any questions or need additional assistance, please feel free to ask. I am here to help!
+"""
+    bot.reply_to(message, help_message)
+
+@bot.message_handler(commands=['commands'])
+def send_all_commands(message):
+    all_commands_message = """
+📗 Command List 📗
+
+Implemented Commands 🟢
+
+Home and Help Commands:
+
+/start - Starts the virtual assistant.
+/commands - Lists all ChatBot commands.
+/help - Provides a help guide.
+/informations - Shows information about the ChatBot.
+/tutorial - Shows information about the ChatBot.
+/stop - Stops the bot from functioning.
+
+Connection Commands with IQ Option:
+
+/connect - Starts the connection with the IQ Option platform.
+/disconnect - Terminates the connection with the IQ Option platform.
+/credentials - Shows the provided email and password credentials.
+
+Trading Commands:
+
+/purchase - Starts the process of purchasing an asset.
+/reset_purchase - Reset purchase information for the last asset.
+/reset_choice - Resets the user's choice.
+/expiration - Shows the expiration time chosen for the candle.
+/choose_candle_time - Allows you to choose the candle expiration time (1, 5 or 15 minutes).
+
+/start - Starts the virtual assistant.
+/commands - List all ChatBot commands.
+/help - Offers a help guide.
+/informations - Shows ChatBot information.
+/tutorial - Shows ChatBot information.
+/stop - For the bot to work.
+/connect - Starts connection with the IQ Option platform.
+/disconnect - Closes the connection with the IQ Option platform.
+/credentials - Shows the email and password credentials that were provided.
+/purchase - Starts the process of purchasing an asset.
+/reset_purchase - Resets the purchase information for the last asset.
+/reset_choice - Resets user choice.
+/expiration - Shows the chosen candle expiration time.
+/choose_candle_time - Allows you candle expiration time (1, 5 or 15 minutes).
+
+Unimplemented Commands 🔴
+
+User Data Management:
+
+/clear_user_data - Clears user data.
+/get_last_purchase - Shows the last purchase operation performed.
+/create_ready_list - Creates a ready-to-use list.
+/show_ready_list - Shows a ready-to-use list.
+/use_read_list - Uses the ready list.
+/connect_order_blocks - Connects to Order Blocks.
+/email - Shows the provided email.
+/password - Shows the provided password.
+/configurations - Shows the settings used in the ChatBot.
+/adjusts_menu - Allows you to modify ChatBot settings.
+"""
+    bot.reply_to(message, all_commands_message)
+
+@bot.message_handler(commands=['informations'])
+def send_all_commands(message):
+    informations = """
+📉 Informations of this Bot 📈
+
+This bot was developed to assist in the process of purchasing assets on the IQ Option platform.
+
+Our objective with the Bot is to provide trading assistance to improve and increase your results.
+
+With it you can connect faster and more simply on the platform.
+
+It doesn't stop there, the Bot is still capable of helping you make smarter purchases and consequently you end up being able to manage your time better.
+
+Additionally, this bot is available to answer questions, provide useful information and guidance whenever you need it.
+
+Please remember that this wizard is designed to help you, but it is important to trade responsibly and understand the risks involved in the financial market. Feel free to explore the available features and commands. I'm here to make your IQ Option experience more efficient and effective.
+"""
+    bot.reply_to(message, informations)
+
+@bot.message_handler(commands=['tutorial'])
+def send_all_commands(message):
+    informations = """
+Tutorial
+
+Welcome to the tutorial for using this bot on the IQ Option platform! We are here to make your trading experience easier. Here are some starting tips:
+
+1. Useful Commands:
+    - If you need help or want to see a list of available commands, type /help at any time.
+    - For additional information about the bot, including its purpose and features, type /informations.
+
+2. Connection to IQ Option:
+    - Use the /connect command to quickly connect to your IQ Option account directly from this chat.
+
+3. Making Purchases:
+    - When you are ready to make a purchase of financial assets, use the /purchase command. The bot will follow the Gale strategy to help with your operations.
+
+4. Time Management:
+    - Customize the candle expiration time for your trades with the /expiration command. This allows you to tailor your trades to your preferences.
+
+5. Assistance and Support:
+    - This bot is here to provide support and assistance during your trades on IQ Option. Don't hesitate to ask questions or request guidance.
+
+Remember that you are in control of your trading, and this bot is here to make the process more efficient and informative. Trade responsibly and take advantage of the features offered. We are here to help and make your trading experience smoother.
+"""
+    bot.reply_to(message, informations)
 
 @bot.message_handler(func=lambda message: True)
 def echo_message(message):
