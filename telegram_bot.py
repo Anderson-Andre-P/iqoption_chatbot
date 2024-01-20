@@ -44,11 +44,55 @@ def process_password_step(message):
         markup.add(InlineKeyboardButton('Demo', callback_data='demo'), InlineKeyboardButton('Real', callback_data='real'))
         bot.send_message(chat_id, "Connected successfully! Choose the account to connect:", reply_markup=markup)
     else:
-        bot.reply_to(message, "Connection fail. Check your credentials.")
-        markup = ReplyKeyboardMarkup(resize_keyboard=True)
-        markup.add(KeyboardButton('/connect'))
-        bot.send_message(chat_id, "Do you want to try connecting again?", reply_markup=markup)
-        bot.register_next_step_handler(message, process_retry_connection_step)
+        bot.reply_to(message, "Connection fail. Check your credentials with the /email and /password commands.")
+
+@bot.message_handler(commands=['credentials'])
+def send_credentials(message):
+    chat_id = message.chat.id
+    user_data = user_choices.get(chat_id)
+
+    if user_data is None:
+        credentials_message = "No user data found."
+    else:
+        email = user_data.get("email")
+        password = user_data.get("password")
+        account_type = user_data.get("account_type")
+
+        if email is not None and password is not None and account_type is not None:
+            credentials_message = f"📧 Your email is: {email}\n🔒 Your password is: {password}\n💻 Your account type is: {account_type}."
+        else:
+            credentials_message = "Credentials not provided."
+
+    bot.reply_to(message, credentials_message)
+
+
+@bot.message_handler(commands=['email'])
+def send_credentials(message):
+    chat_id = message.chat.id
+    user_data = user_choices.get(chat_id)
+    if user_data is not None:
+        email = user_data.get("email")
+        if email is not None:
+            email_message = f"📧 Your email is: {email}"
+            bot.reply_to(message, email_message)
+        else:
+            bot.reply_to(message, "Email not provided.")
+    else:
+        bot.reply_to(message, "No user data found.")
+
+@bot.message_handler(commands=['password'])
+def send_credentials(message):
+    chat_id = message.chat.id
+    user_data = user_choices.get(chat_id)
+    if user_data is not None:
+        password = user_data.get("password")
+        if password is not None:
+            password_message = f"🔒 Your password is: {password}"
+            bot.reply_to(message, password_message)
+        else:
+            bot.reply_to(message, "password not provided.")
+    else:
+        bot.reply_to(message, "No user data found.")
 
 @bot.callback_query_handler(func=lambda call: True)
 def handle_callback_query(call):
@@ -89,8 +133,19 @@ def process_account_choice_step(message, choice):
         markup = ReplyKeyboardRemove()
         bot.send_message(chat_id, "Account type chosen! Use /purchase to perform operations.", reply_markup=markup)
     else:
-        bot.reply_to(message, "Connection fail. Check your credentials.")
-        
+        bot.reply_to(message, "Connection fail. Check your /email and /password.\nIf the email and password credentials are wrong, use the /reset command to provide new credentials.")
+
+@bot.message_handler(commands=['reset'])
+def reset_credentials(message):
+    chat_id = message.chat.id
+    if chat_id in user_choices:
+        user_choices.pop(chat_id, None)
+        user_credentials.pop(chat_id, None)
+        user_purchase_params.pop(chat_id, None)
+        bot.reply_to(message, "Account reset successfully.")
+    else:
+        bot.reply_to(message, "Nothing to be reset.")
+
 @bot.message_handler(commands=['disconnect'])
 def handle_disconnect_command(message):
     chat_id = message.chat.id
@@ -386,26 +441,26 @@ Trading Commands:
 /stop - For the bot to work.
 /connect - Starts connection with the IQ Option platform.
 /disconnect - Closes the connection with the IQ Option platform.
-/credentials - Shows the email and password credentials that were provided.
 /purchase - Starts the process of purchasing an asset.
 /reset_purchase - Resets the purchase information for the last asset.
 /reset_choice - Resets user choice.
-
-Unimplemented Commands 🔴
-
-User Data Management:
-
-/clear_user_data - Clears user data.
-/get_last_purchase - Shows the last purchase operation performed.
-/create_ready_list - Creates a ready-to-use list.
-/show_ready_list - Shows a ready-to-use list.
-/use_read_list - Uses the ready list.
-/connect_order_blocks - Connects to Order Blocks.
+/credentials - Shows the email and password credentials that were provided.
 /email - Shows the provided email.
 /password - Shows the provided password.
-/configurations - Shows the settings used in the ChatBot.
-/adjusts_menu - Allows you to modify ChatBot settings.
+/reset - Deletes all settings for the account present in that chat
 """
+# Unimplemented Commands 🔴
+
+# User Data Management:
+
+# /clear_user_data - Clears user data.
+# /get_last_purchase - Shows the last purchase operation performed.
+# /create_ready_list - Creates a ready-to-use list.
+# /show_ready_list - Shows a ready-to-use list.
+# /use_read_list - Uses the ready list.
+# /connect_order_blocks - Connects to Order Blocks.
+# /configurations - Shows the settings used in the ChatBot.
+# /adjusts_menu - Allows you to modify ChatBot settings.
     bot.reply_to(message, all_commands_message)
 
 @bot.message_handler(commands=['informations'])
