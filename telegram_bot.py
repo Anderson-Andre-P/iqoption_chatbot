@@ -10,6 +10,7 @@ bot = telebot.TeleBot(config.API_TOKEN)
 user_choices = {}
 user_purchase_params = {}
 user_credentials = {}
+user_ready_lists = {}
 
 ready_lists = {
     "List 1": {"marker": "EURUSD-OTC", "input_value": 100, "direction": "call", "type": "digital", "gale_quantity": 4, "gale_multiplier": 2, "candle_time": 1},
@@ -113,7 +114,8 @@ def handle_callback_query(call):
 
     if choice.startswith('list_'):
         list_name = choice.split('_', 1)[1]
-        chosen_list = ready_lists.get(list_name)
+        combined_ready_lists = {**ready_lists, **user_ready_lists.get(chat_id, {})}
+        chosen_list = combined_ready_lists.get(list_name)
         if chosen_list:
             user_purchase_params[chat_id] = chosen_list
             bot.answer_callback_query(call.id, f"You have chosen: {list_name}")
@@ -121,7 +123,13 @@ def handle_callback_query(call):
         else:
             bot.answer_callback_query(call.id, "Invalid choice.")
             bot.send_message(chat_id, "An error occurred. Please try again.")
-    
+    elif choice.startswith('direction_'):
+        process_direction(call)
+    elif choice.startswith('type_'):
+        process_type(call)
+    elif choice.startswith('candle_time_'):
+        process_candle_time(call)
+
     elif choice in ['demo', 'real']:
         user_choices[chat_id]["account_choice"] = choice
         process_account_choice_step(call.message, choice)
@@ -136,7 +144,6 @@ def handle_callback_query(call):
         handle_candle_time_choice(call)
 
     else:
-        # Para escolhas que não são reconhecidas
         bot.answer_callback_query(call.id, "Invalid choice.")
 
 def process_retry_connection_step(message):
@@ -196,13 +203,17 @@ def execute_purchase(chat_id):
         bot.send_message(chat_id, "Incomplete purchase parameters. Please use /use_ready_list or set parameters manually.")
         return
 
-    marker = purchase_params["marker"]
-    input_value = purchase_params["input_value"]
-    direction = purchase_params["direction"]
-    type = purchase_params["type"]
-    gale_quantity = purchase_params["gale_quantity"]
-    gale_multiplier = purchase_params["gale_multiplier"]
-    candle_time = purchase_params["candle_time"]
+    try:
+        marker = purchase_params["marker"]
+        input_value = float(purchase_params["input_value"])
+        direction = purchase_params["direction"]
+        type = purchase_params["type"]
+        gale_quantity = int(purchase_params["gale_quantity"])
+        gale_multiplier = float(purchase_params["gale_multiplier"])
+        candle_time = int(purchase_params["candle_time"])
+    except ValueError as e:
+        bot.send_message(chat_id, f"Error in purchase parameters: {e}")
+        return
 
     user_data = user_credentials.get(chat_id)
     if not user_data:
@@ -494,14 +505,13 @@ Trading Commands:
 /choose_candle_time - Allows you to choose the candle expiration time (1, 5 or 15 minutes).
 /show_ready_list - Shows a ready-to-use list.
 /use_read_list - Uses the ready list.
+/create_ready_list - Creates a ready-to-use list.
 """
 # Unimplemented Commands 🔴
 
 # User Data Management:
 
-# /clear_user_data - Clears user data.
 # /get_last_purchase - Shows the last purchase operation performed.
-# /create_ready_list - Creates a ready-to-use list.
 # /connect_order_blocks - Connects to Order Blocks.
 # /configurations - Shows the settings used in the ChatBot.
 # /adjusts_menu - Allows you to modify ChatBot settings.
@@ -568,14 +578,16 @@ def show_ready_list(message):
         bot.send_message(chat_id, "No ready lists are available at the moment.")
         return
 
+    combined_ready_lists = {**ready_lists, **user_ready_lists.get(chat_id, {})}
+
     message_text = "📋 Ready Lists Available:\n\n"
-    for list_name, list_details in ready_lists.items():
+    for list_name, list_details in combined_ready_lists.items():
         message_text += f"🔹 {list_name}:\n"
         for key, value in list_details.items():
             message_text += f"  - {key}: {value}\n"
         message_text += "\n"
 
-    message_text += "Use the /use_ready_list command to use any of the ready lists above."
+    message_text += "Use the /use_ready_list command to use any of the ready lists above.\n\nOr if you prefer, you can create your own list with the /create_ready_list command."
 
     bot.send_message(chat_id, message_text)
 
@@ -587,8 +599,14 @@ def handle_use_ready_list(message):
         bot.reply_to(message, "You need to be logged in to use this feature. Please use /connect to log in.")
         return
 
+    combined_ready_lists = {**ready_lists, **user_ready_lists.get(chat_id, {})}
+
+    if not combined_ready_lists:
+        bot.send_message(chat_id, "No ready lists are available. Use /create_ready_list to create one.")
+        return
+
     markup = InlineKeyboardMarkup()
-    for list_name in ready_lists.keys():
+    for list_name in combined_ready_lists.keys():
         markup.add(InlineKeyboardButton(list_name, callback_data=f'list_{list_name}'))
 
     bot.send_message(chat_id, "Choose a ready list to use:", reply_markup=markup)
@@ -598,10 +616,8 @@ def handle_use_ready_list(message):
 def handle_list_choice(call):
     chat_id = call.message.chat.id
     list_name = call.data.split('_', 1)[1]
-
-    print(f"Callback data received: {call.data}, List name extracted: {list_name}")
-
-    chosen_list = ready_lists.get(list_name)
+    combined_ready_lists = {**ready_lists, **user_ready_lists.get(chat_id, {})}
+    chosen_list = combined_ready_lists.get(list_name)
     if chosen_list:
         user_purchase_params[chat_id] = chosen_list
         bot.answer_callback_query(call.id, f"You have chosen: {list_name}")
@@ -609,6 +625,119 @@ def handle_list_choice(call):
     else:
         bot.answer_callback_query(call.id, "Invalid choice.")
         bot.send_message(chat_id, "An error occurred. Please try again.")
+
+
+@bot.message_handler(commands=['create_ready_list'])
+def start_create_ready_list(message):
+    chat_id = message.chat.id
+    msg = bot.send_message(chat_id, "Enter a name for your ready list:")
+    bot.register_next_step_handler(msg, process_ready_list_name, chat_id)
+
+def process_ready_list_name(message, chat_id):
+    list_name = message.text
+    user_ready_lists[chat_id] = {list_name: {}}
+    
+    msg = bot.send_message(chat_id, "Enter the marker (e.g., EURUSD):")
+    bot.register_next_step_handler(msg, process_marker, chat_id, list_name)
+
+def process_marker(message, chat_id, list_name):
+    marker = message.text
+    user_ready_lists[chat_id][list_name]["marker"] = marker
+    
+    msg = bot.send_message(chat_id, "Enter the input value:")
+    bot.register_next_step_handler(msg, process_input_value, chat_id, list_name)
+
+def process_input_value(message, chat_id, list_name):
+    input_value = message.text
+    user_ready_lists[chat_id][list_name]["input_value"] = input_value
+
+    markup = InlineKeyboardMarkup()
+    markup.add(InlineKeyboardButton("Call", callback_data=f"direction_call_{list_name}"),
+               InlineKeyboardButton("Put", callback_data=f"direction_put_{list_name}"))
+    bot.send_message(chat_id, "Choose the direction:", reply_markup=markup)
+
+@bot.callback_query_handler(func=lambda call: call.data.startswith('direction_'))
+def process_direction(call):
+    chat_id = call.message.chat.id
+    _, direction, list_name = call.data.split('_')
+    user_ready_lists[chat_id][list_name]["direction"] = direction
+
+    user_ready_lists[chat_id][list_name]["direction"] = direction
+
+    markup = InlineKeyboardMarkup()
+    markup.add(InlineKeyboardButton("Binary", callback_data=f"type_binary_{list_name}"),
+               InlineKeyboardButton("Digital", callback_data=f"type_digital_{list_name}"))
+    bot.send_message(chat_id, "Choose the type:", reply_markup=markup)
+
+@bot.callback_query_handler(func=lambda call: call.data.startswith('type_'))
+def process_type(call):
+    chat_id = call.message.chat.id
+    _, type, list_name = call.data.split('_')
+    user_ready_lists[chat_id][list_name]["type"] = type
+
+    user_ready_lists[chat_id][list_name]["type"] = type
+
+    markup = InlineKeyboardMarkup()
+    markup.add(InlineKeyboardButton("1 minute", callback_data=f"candle_time_1_{list_name}"),
+               InlineKeyboardButton("5 minutes", callback_data=f"candle_time_5_{list_name}"),
+               InlineKeyboardButton("15 minutes", callback_data=f"candle_time_15_{list_name}"))
+    bot.send_message(chat_id, "Choose the candle time:", reply_markup=markup)
+
+def process_gale_quantity(message, chat_id, list_name):
+    gale_quantity = message.text
+    user_ready_lists[chat_id][list_name]["gale_quantity"] = gale_quantity
+
+    msg = bot.send_message(chat_id, "Enter the Gale multiplier:")
+    bot.register_next_step_handler(msg, process_gale_multiplier, chat_id, list_name)
+
+def process_gale_multiplier(message, chat_id, list_name):
+    gale_multiplier = message.text
+    user_ready_lists[chat_id][list_name]["gale_multiplier"] = gale_multiplier
+
+    msg = bot.send_message(chat_id, "Enter the candle time (1, 5 or 15):")
+    bot.register_next_step_handler(msg, process_candle_time, chat_id, list_name)
+
+def ask_gale_quantity(message, chat_id, list_name):
+    msg = bot.send_message(chat_id, "Enter the number of Gale operations:")
+    bot.register_next_step_handler(msg, process_gale_quantity, chat_id, list_name)
+
+def process_gale_quantity(message, chat_id, list_name):
+    gale_quantity = message.text
+    try:
+        gale_quantity = int(gale_quantity)
+        user_ready_lists[chat_id][list_name]["gale_quantity"] = gale_quantity
+        ask_gale_multiplier(message, chat_id, list_name)
+    except ValueError:
+        bot.send_message(chat_id, "Please enter a valid integer for Gale operations.")
+        ask_gale_quantity(message, chat_id, list_name)
+
+def ask_gale_multiplier(message, chat_id, list_name):
+    msg = bot.send_message(chat_id, "Enter the Gale multiplier:")
+    bot.register_next_step_handler(msg, process_gale_multiplier, chat_id, list_name)
+
+def process_gale_multiplier(message, chat_id, list_name):
+    gale_multiplier = message.text
+    try:
+        gale_multiplier = float(gale_multiplier)
+        user_ready_lists[chat_id][list_name]["gale_multiplier"] = gale_multiplier
+        bot.send_message(chat_id, f"Lista customizada '{list_name}' adicionada com sucesso.")
+    except ValueError:
+        bot.send_message(chat_id, "Please enter a valid number for the Gale multiplier.")
+        ask_gale_multiplier(message, chat_id, list_name)
+
+@bot.callback_query_handler(func=lambda call: call.data.startswith('candle_time_'))
+def process_candle_time(call):
+    chat_id = call.message.chat.id
+    data_parts = call.data.split('_')
+    candle_time_str = data_parts[2]
+    list_name = '_'.join(data_parts[3:])
+
+    try:
+        candle_time = int(candle_time_str)
+        user_ready_lists[chat_id][list_name]["candle_time"] = candle_time
+        ask_gale_quantity(call.message, chat_id, list_name)
+    except ValueError:
+        bot.send_message(chat_id, "Invalid candle time. Please enter a number.")
 
 @bot.message_handler(func=lambda message: True)
 def echo_message(message):
