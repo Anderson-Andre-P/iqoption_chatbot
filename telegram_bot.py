@@ -345,16 +345,6 @@ def handle_candle_time_choice(call):
     else:
         bot.reply_to(call.message, "Error connecting. Check your credentials.")
 
-@bot.message_handler(commands=['reset_choice'])
-def handle_reset_choice_command(message):
-    chat_id = message.chat.id
-
-    if chat_id in user_choices:
-        del user_choices[chat_id]
-        bot.reply_to(message, "Choice reset successfully.")
-    else:
-        bot.reply_to(message, "You haven't made a choice yet. Use /choose_candle_time to get started.")
-
 @bot.message_handler(commands=['choose_candle_time'])
 def handle_expiration_command(message):
     chat_id = message.chat.id
@@ -435,7 +425,6 @@ Trading Commands:
 
 /purchase - Starts the process of purchasing an asset.
 /reset_purchase - Reset purchase information for the last asset.
-/reset_choice - Resets the user's choice.
 /choose_candle_time - Allows you to choose the candle expiration time (1, 5 or 15 minutes).
 
 /start - Starts the virtual assistant.
@@ -448,7 +437,6 @@ Trading Commands:
 /disconnect - Closes the connection with the IQ Option platform.
 /purchase - Starts the process of purchasing an asset.
 /reset_purchase - Resets the purchase information for the last asset.
-/reset_choice - Resets user choice.
 /credentials - Shows the email and password credentials that were provided.
 /email - Shows the provided email.
 /password - Shows the provided password.
