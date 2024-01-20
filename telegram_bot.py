@@ -419,28 +419,19 @@ Connection Commands with IQ Option:
 
 /connect - Starts the connection with the IQ Option platform.
 /disconnect - Terminates the connection with the IQ Option platform.
+
+Commands with User Data:
+
 /credentials - Shows the provided email and password credentials.
+/email - Shows the provided email.
+/password - Shows the provided password.
+/reset - Deletes all settings for the account present in that chat
 
 Trading Commands:
 
 /purchase - Starts the process of purchasing an asset.
 /reset_purchase - Reset purchase information for the last asset.
 /choose_candle_time - Allows you to choose the candle expiration time (1, 5 or 15 minutes).
-
-/start - Starts the virtual assistant.
-/commands - List all ChatBot commands.
-/help - Offers a help guide.
-/informations - Shows ChatBot information.
-/tutorial - Shows ChatBot information.
-/stop - For the bot to work.
-/connect - Starts connection with the IQ Option platform.
-/disconnect - Closes the connection with the IQ Option platform.
-/purchase - Starts the process of purchasing an asset.
-/reset_purchase - Resets the purchase information for the last asset.
-/credentials - Shows the email and password credentials that were provided.
-/email - Shows the provided email.
-/password - Shows the provided password.
-/reset - Deletes all settings for the account present in that chat
 """
 # Unimplemented Commands 🔴
 
