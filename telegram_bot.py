@@ -15,7 +15,7 @@ user_credentials = {}
 def handle_connect_command(message):
     chat_id = message.chat.id
     if chat_id in user_choices:
-        bot.reply_to(message, "You have already provided your credentials previously. Use /disconnect to reconnect.")
+        bot.reply_to(message, "You have already provided your credentials previously. Use /email and /password to see.")
     else:
         bot.reply_to(message, "Please send your email.")
         bot.register_next_step_handler(message, process_email_step)
@@ -44,7 +44,7 @@ def process_password_step(message):
         markup.add(InlineKeyboardButton('Demo', callback_data='demo'), InlineKeyboardButton('Real', callback_data='real'))
         bot.send_message(chat_id, "Connected successfully! Choose the account to connect:", reply_markup=markup)
     else:
-        bot.reply_to(message, "Connection fail. Check your credentials with the /email and /password commands.")
+        bot.reply_to(message, "The connection failed due to an internal problem or credentials sent with errors.\n\nCheck your credentials with the /email and /password commands.\n\nIf you believe this is a ChatBot issue, please contact us using the /contact.")
 
 @bot.message_handler(commands=['credentials'])
 def send_credentials(message):
@@ -150,13 +150,15 @@ def reset_credentials(message):
 def handle_disconnect_command(message):
     chat_id = message.chat.id
 
-    if chat_id in user_credentials:
-        del user_credentials[chat_id]
-        if chat_id in user_choices:
-            del user_choices[chat_id]
-        bot.reply_to(message, "Successfully disconnected.")
-    else:
+    if chat_id not in user_credentials:
         bot.reply_to(message, "You are not currently logged in. Use /connect to connect.")
+        return
+
+    user_credentials.pop(chat_id, None)
+    user_choices.pop(chat_id, None)
+    user_purchase_params.pop(chat_id, None)
+
+    bot.reply_to(message, "Successfully disconnected.")
 
 @bot.message_handler(commands=['purchase'])
 def handle_purchase_command(message):
