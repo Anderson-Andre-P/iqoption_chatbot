@@ -11,6 +11,13 @@ user_choices = {}
 user_purchase_params = {}
 user_credentials = {}
 
+ready_lists = {
+    "List 1": {"marker": "EURUSD-OTC", "input_value": 100, "direction": "call", "type": "digital", "gale_quantity": 4, "gale_multiplier": 2, "candle_time": 1},
+    "List 2": {"marker": "EURUSD-OTC", "input_value": 100, "direction": "put", "type": "binary", "gale_quantity": 3, "gale_multiplier": 2, "candle_time": 5},
+    "List 3": {"marker": "EURJPY-OTC", "input_value": 100, "direction": "call", "type": "binary", "gale_quantity": 6, "gale_multiplier": 2, "candle_time": 1},
+    "List 4": {"marker": "EURJPY-OTC", "input_value": 100, "direction": "put", "type": "digital", "gale_quantity": 8, "gale_multiplier": 2, "candle_time": 15},
+}
+
 @bot.message_handler(commands=['connect'])
 def handle_connect_command(message):
     chat_id = message.chat.id
@@ -39,7 +46,12 @@ def process_password_step(message):
     iq_api, account_type, success = iqoption.connect_iq_option(email, password, 'demo')
     if success:
         user_choices[chat_id]["account_type"] = account_type
-        user_credentials[chat_id] = {"email": email, "password": password, "account_type": account_type}
+        user_credentials[chat_id] = {
+            "email": email,
+            "password": password,
+            "account_type": account_type,
+            "iq_api_instance": iq_api
+        }
         markup = InlineKeyboardMarkup(row_width=2)
         markup.add(InlineKeyboardButton('Demo', callback_data='demo'), InlineKeyboardButton('Real', callback_data='real'))
         bot.send_message(chat_id, "Connected successfully! Choose the account to connect:", reply_markup=markup)
@@ -99,17 +111,33 @@ def handle_callback_query(call):
     chat_id = call.message.chat.id
     choice = call.data
 
-    if choice == "demo" or choice == "real":
+    if choice.startswith('list_'):
+        list_name = choice.split('_', 1)[1]
+        chosen_list = ready_lists.get(list_name)
+        if chosen_list:
+            user_purchase_params[chat_id] = chosen_list
+            bot.answer_callback_query(call.id, f"You have chosen: {list_name}")
+            bot.send_message(chat_id, f"List '{list_name}' selected. Use /purchase to start purchasing with these parameters.")
+        else:
+            bot.answer_callback_query(call.id, "Invalid choice.")
+            bot.send_message(chat_id, "An error occurred. Please try again.")
+    
+    elif choice in ['demo', 'real']:
         user_choices[chat_id]["account_choice"] = choice
-        process_account_choice_step(call.message, call.data)
-    elif choice == "call" or choice == "put":
+        process_account_choice_step(call.message, choice)
+
+    elif choice in ['call', 'put']:
         handle_direction_choice(call)
-    elif choice == "binary" or choice == "digital":
+
+    elif choice in ['binary', 'digital']:
         handle_purchase_type_choice(call)
+
     elif choice in ['1 minute', '5 minutes', '15 minutes']:
         handle_candle_time_choice(call)
+
     else:
-        bot.reply_to(call.message, "Invalid choice. Use /connect to try again.")
+        # Para escolhas que não são reconhecidas
+        bot.answer_callback_query(call.id, "Invalid choice.")
 
 def process_retry_connection_step(message):
     if message.text.lower() == '/connect':
@@ -131,7 +159,7 @@ def process_account_choice_step(message, choice):
     if success:
         bot.reply_to(message, f"Connected successfully! Account: {user_choices[chat_id]['account_choice']}")
         markup = ReplyKeyboardRemove()
-        bot.send_message(chat_id, "Account type chosen! Use /purchase to perform operations.", reply_markup=markup)
+        bot.send_message(chat_id, "Account type chosen!\n\nUse /purchase to perform operations or /show_ready_list to see pre-configured operations.", reply_markup=markup)
     else:
         bot.reply_to(message, "Connection fail. Check your /email and /password.\nIf the email and password credentials are wrong, use the /reset command to provide new credentials.")
 
@@ -160,6 +188,37 @@ def handle_disconnect_command(message):
 
     bot.reply_to(message, "Successfully disconnected.")
 
+def execute_purchase(chat_id):
+    purchase_params = user_purchase_params.get(chat_id, {})
+    
+    required_params = ["marker", "input_value", "direction", "type", "gale_quantity", "gale_multiplier", "candle_time"]
+    if not all(param in purchase_params for param in required_params):
+        bot.send_message(chat_id, "Incomplete purchase parameters. Please use /use_ready_list or set parameters manually.")
+        return
+
+    marker = purchase_params["marker"]
+    input_value = purchase_params["input_value"]
+    direction = purchase_params["direction"]
+    type = purchase_params["type"]
+    gale_quantity = purchase_params["gale_quantity"]
+    gale_multiplier = purchase_params["gale_multiplier"]
+    candle_time = purchase_params["candle_time"]
+
+    user_data = user_credentials.get(chat_id)
+    if not user_data:
+        bot.send_message(chat_id, "You are not connected. Please use /connect to connect.")
+        return
+
+    user_data = user_credentials.get(chat_id)
+    API = user_data.get("iq_api_instance") if user_data else None
+    if not API:
+        bot.send_message(chat_id, "API connection is not established. Please reconnect.")
+        return
+
+    result = iqoption.purchase_with_gale(API, marker, input_value, direction, candle_time, type, gale_quantity, gale_multiplier, bot, chat_id)
+    
+    bot.send_message(chat_id, result["result"])
+
 @bot.message_handler(commands=['purchase'])
 def handle_purchase_command(message):
     chat_id = message.chat.id
@@ -168,8 +227,9 @@ def handle_purchase_command(message):
         bot.reply_to(message, "You need to connect first. Use /connect to connect.")
         return
 
-    if chat_id in user_purchase_params:
-        bot.reply_to(message, "You have already provided the purchasing parameters previously. Use /reset_purchase to start a new purchase.")
+    if chat_id in user_purchase_params and user_purchase_params[chat_id]:
+        bot.reply_to(message, "Starting purchase with predefined parameters.")
+        execute_purchase(chat_id)
     else:
         bot.reply_to(message, "Please send the active for purchase.")
         bot.register_next_step_handler(message, process_marker_step)
@@ -432,6 +492,8 @@ Trading Commands:
 /purchase - Starts the process of purchasing an asset.
 /reset_purchase - Reset purchase information for the last asset.
 /choose_candle_time - Allows you to choose the candle expiration time (1, 5 or 15 minutes).
+/show_ready_list - Shows a ready-to-use list.
+/use_read_list - Uses the ready list.
 """
 # Unimplemented Commands 🔴
 
@@ -440,8 +502,6 @@ Trading Commands:
 # /clear_user_data - Clears user data.
 # /get_last_purchase - Shows the last purchase operation performed.
 # /create_ready_list - Creates a ready-to-use list.
-# /show_ready_list - Shows a ready-to-use list.
-# /use_read_list - Uses the ready list.
 # /connect_order_blocks - Connects to Order Blocks.
 # /configurations - Shows the settings used in the ChatBot.
 # /adjusts_menu - Allows you to modify ChatBot settings.
@@ -492,6 +552,63 @@ Welcome to the tutorial for using this bot on the IQ Option platform! We are her
 Remember that you are in control of your trading, and this bot is here to make the process more efficient and informative. Trade responsibly and take advantage of the features offered. We are here to help and make your trading experience smoother.
 """
     bot.reply_to(message, informations)
+
+@bot.message_handler(commands=['test_connection'])
+def test_connection_status(message):
+    chat_id = message.chat.id
+    if chat_id in user_credentials:
+        bot.send_message(chat_id, f"You are connected. Credentials: {user_credentials[chat_id]}")
+    else:
+        bot.send_message(chat_id, "You are not connected.")
+
+@bot.message_handler(commands=['show_ready_list'])
+def show_ready_list(message):
+    chat_id = message.chat.id
+    if not ready_lists:
+        bot.send_message(chat_id, "No ready lists are available at the moment.")
+        return
+
+    message_text = "📋 Ready Lists Available:\n\n"
+    for list_name, list_details in ready_lists.items():
+        message_text += f"🔹 {list_name}:\n"
+        for key, value in list_details.items():
+            message_text += f"  - {key}: {value}\n"
+        message_text += "\n"
+
+    message_text += "Use the /use_ready_list command to use any of the ready lists above."
+
+    bot.send_message(chat_id, message_text)
+
+@bot.message_handler(commands=['use_ready_list'])
+def handle_use_ready_list(message):
+    chat_id = message.chat.id
+
+    if chat_id not in user_credentials:
+        bot.reply_to(message, "You need to be logged in to use this feature. Please use /connect to log in.")
+        return
+
+    markup = InlineKeyboardMarkup()
+    for list_name in ready_lists.keys():
+        markup.add(InlineKeyboardButton(list_name, callback_data=f'list_{list_name}'))
+
+    bot.send_message(chat_id, "Choose a ready list to use:", reply_markup=markup)
+
+
+@bot.callback_query_handler(func=lambda call: call.data.startswith('list_'))
+def handle_list_choice(call):
+    chat_id = call.message.chat.id
+    list_name = call.data.split('_', 1)[1]
+
+    print(f"Callback data received: {call.data}, List name extracted: {list_name}")
+
+    chosen_list = ready_lists.get(list_name)
+    if chosen_list:
+        user_purchase_params[chat_id] = chosen_list
+        bot.answer_callback_query(call.id, f"You have chosen: {list_name}")
+        bot.send_message(chat_id, f"List '{list_name}' selected. Use /purchase to start purchasing with these parameters.")
+    else:
+        bot.answer_callback_query(call.id, "Invalid choice.")
+        bot.send_message(chat_id, "An error occurred. Please try again.")
 
 @bot.message_handler(func=lambda message: True)
 def echo_message(message):
