@@ -181,26 +181,29 @@ def process_marker_step(message):
     user_purchase_params[chat_id] = {"marker": marker}
 
     bot.reply_to(message, "Excellent! Now please submit the down payment.")
-    bot.register_next_step_handler(message, process_input_value_step)
+    bot.register_next_step_handler(message, process_input_value_response)
 
-def process_input_value_step(message):
+def process_input_value_response(message):
     chat_id = message.chat.id
     input_value = message.text
 
     try:
         input_value = float(input_value)
+        if isinstance(input_value, float):
+            user_purchase_params[chat_id]["input_value"] = input_value
+
+            markup = InlineKeyboardMarkup(row_width=2)
+            call_button = InlineKeyboardButton("Call", callback_data="call")
+            put_button = InlineKeyboardButton("Put", callback_data="put")
+            markup.add(call_button, put_button)
+
+            bot.send_message(chat_id, "Please choose the purchase direction:", reply_markup=markup)
+        else:
+            bot.send_message(chat_id, "The input value must be a valid float number. Please try again.")
+            bot.register_next_step_handler(message, process_input_value_response)
     except ValueError:
-        bot.reply_to(message, "The input value must be a valid number.")
-        return
-
-    user_purchase_params[chat_id]["input_value"] = input_value
-
-    markup = InlineKeyboardMarkup(row_width=2)
-    call_button = InlineKeyboardButton("Call", callback_data="call")
-    put_button = InlineKeyboardButton("Put", callback_data="put")
-    markup.add(call_button, put_button)
-
-    bot.send_message(chat_id, "Please choose the purchase direction:", reply_markup=markup)
+        bot.send_message(chat_id, "The input value must be a valid number. Please try again.")
+        bot.register_next_step_handler(message, process_input_value_response)
 
 @bot.callback_query_handler(func=lambda call: call.data in ["call", "put"])
 def handle_direction_choice(call):
