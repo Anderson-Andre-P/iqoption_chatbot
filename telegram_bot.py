@@ -414,6 +414,7 @@ Home and Help Commands:
 /informations - Shows information about the ChatBot.
 /tutorial - Shows information about the ChatBot.
 /stop - Stops the bot from functioning.
+/contact - Provides ways to contact those responsible for the bot.
 
 Connection Commands with IQ Option:
 
