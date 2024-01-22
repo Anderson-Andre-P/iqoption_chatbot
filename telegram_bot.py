@@ -224,9 +224,6 @@ def process_type_step(message):
     chat_id = message.chat.id
     type_choice = message.text.lower()
 
-    print(f'Type Choice {type_choice}\n\n\n')
-    print(f'Message {message}\n\n\n')
-
     if type_choice not in ['binary', 'digital']:
         bot.reply_to(message, "The purchase type must be 'binary' or 'digital'.")
         return
@@ -269,9 +266,6 @@ def process_gale_multiplier_step(message):
 def handle_candle_time_choice(call):
     chat_id = call.message.chat.id
     candle_time = call.data
-
-    print(f'chat id: {chat_id}\n\n')
-    print(f'cancle time: {candle_time}\n\n')
 
     if candle_time == '1 minute':
         candle_time_value = 1
