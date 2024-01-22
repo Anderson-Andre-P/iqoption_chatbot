@@ -1,10 +1,10 @@
 import telebot
+from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardRemove
 import config
 import iqoption
 from utils import choose_candle_time
-from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardRemove
-from handlers.handlers import handle_connect, handle_expiration, handle_informations, handle_reset_purchase, handle_send_all_commands, handle_send_help, handle_show_ready_list, handle_start_create_ready_list, handle_test_connection_status, handle_tutorial, handle_use_ready_list, send_all_credentials, send_email_credentials, send_password_credentials, handle_purchase, handle_disconnect, reset_credentials, send_welcome
-from state import user_choices, user_purchase_params, user_credentials, user_ready_lists
+from handlers.handlers import handle_connect, handle_expiration, handle_informations, handle_reset_purchase, handle_send_all_commands, handle_send_help, handle_show_ready_list, handle_start_create_ready_list, handle_test_connection_status, handle_tutorial, handle_use_ready_list, send_all_credentials, send_email_credentials, send_password_credentials, handle_purchase, handle_disconnect, reset_credentials, send_welcome, handle_get_last_purchase
+from state import *
 from ready_list import ready_lists
  
 bot = telebot.TeleBot(config.API_TOKEN)
@@ -26,6 +26,7 @@ def register_handlers():
     bot.message_handler(commands=['reset_purchase'])(handle_reset_purchase(bot))
     bot.message_handler(commands=['choose_candle_time'])(handle_expiration(bot))
     bot.message_handler(commands=['create_ready_list'])(handle_start_create_ready_list(bot))
+    bot.message_handler(commands=['get_last_purchase'])(handle_get_last_purchase(bot))
 
     # The two commands below do not work correctly. They delete user data, but when trying to connect again, you can pass any value in email and password that the bot accepts.
     bot.message_handler(commands=['disconnect'])(handle_disconnect(bot))

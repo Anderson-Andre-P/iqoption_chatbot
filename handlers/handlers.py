@@ -1,5 +1,5 @@
 from telebot import types
-from state import user_choices, user_purchase_params, user_credentials, user_ready_lists
+from state import *
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 from ready_list import ready_lists
 
@@ -314,12 +314,6 @@ Trading Commands:
 /use_read_list - Uses the ready list.
 /create_ready_list - Creates a ready-to-use list.
 """
-# Unimplemented Commands 🔴
-
-# /get_last_purchase - Shows the last purchase operation performed.
-# /connect_order_blocks - Connects to Order Blocks.
-# /configurations - Shows the settings used in the ChatBot.
-# /adjusts_menu - Allows you to modify ChatBot settings.
         bot.reply_to(message, all_commands_message)
     return command
 
@@ -329,4 +323,18 @@ def handle_start_create_ready_list(bot):
         chat_id = message.chat.id
         msg = bot.send_message(chat_id, "Enter a name for your ready list:")
         bot.register_next_step_handler(msg, process_ready_list_name, chat_id)
+    return command
+
+def handle_get_last_purchase(bot):
+    def command(message):
+        chat_id = message.chat.id
+        purchase_data = user_purchase_params.get(chat_id)
+
+        if purchase_data:
+            purchase_details = "\n".join([f"{key}: {value}" for key, value in purchase_data.items()])
+            response_message = f"🛍️ Last Purchase Details:\n{purchase_details}"
+        else:
+            response_message = "No purchase data found."
+
+        bot.reply_to(message, response_message)
     return command
