@@ -67,10 +67,11 @@ def send_password_credentials(bot):
 def reset_credentials(bot):
     def command(message):
         chat_id = message.chat.id
-        if chat_id in user_choices:
+        if chat_id in user_choices or chat_id in user_credentials or chat_id in user_purchase_params or chat_id in user_ready_lists:
             user_choices.pop(chat_id, None)
             user_credentials.pop(chat_id, None)
             user_purchase_params.pop(chat_id, None)
+            user_ready_lists.pop(chat_id, None)
             bot.reply_to(message, "Account reset successfully.")
         else:
             bot.reply_to(message, "Nothing to be reset.")

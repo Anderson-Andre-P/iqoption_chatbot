@@ -15,8 +15,6 @@ def register_handlers():
     bot.message_handler(commands=['email'])(send_email_credentials(bot))
     bot.message_handler(commands=['password'])(send_password_credentials(bot))
     bot.message_handler(commands=['purchase'])(handle_purchase(bot))
-    bot.message_handler(commands=['disconnect'])(handle_disconnect(bot))
-    bot.message_handler(commands=['reset'])(reset_credentials(bot))
     bot.message_handler(commands=['show_ready_list'])(handle_show_ready_list(bot))
     bot.message_handler(commands=['start'])(send_welcome(bot))
     bot.message_handler(commands=['tutorial'])(handle_tutorial(bot))
@@ -28,6 +26,10 @@ def register_handlers():
     bot.message_handler(commands=['reset_purchase'])(handle_reset_purchase(bot))
     bot.message_handler(commands=['choose_candle_time'])(handle_expiration(bot))
     bot.message_handler(commands=['create_ready_list'])(handle_start_create_ready_list(bot))
+
+    # The two commands below do not work correctly. They delete user data, but when trying to connect again, you can pass any value in email and password that the bot accepts.
+    bot.message_handler(commands=['disconnect'])(handle_disconnect(bot))
+    bot.message_handler(commands=['reset'])(reset_credentials(bot))
 
 register_handlers()
 

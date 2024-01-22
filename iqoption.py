@@ -4,17 +4,15 @@ from iqoptionapi.stable_api import IQ_Option
 def connect_iq_option(email, password, account_type):
     API = IQ_Option(email, password)
     check, reason = API.connect()
-
     if check:
         return API, account_type, True
-    # else:
-        # if reason == '{"code":"invalid_credentials","message":"You entered the wrong credentials. Please ensure that your login/password is correct."}':
-            # print('Invalid email or password.')
-            # print(f'{reason}')
-        # else:
-        #     print('\nConnection timeout...')
-        #     print(f'{reason}')
-        # return None, None, False
+    else:
+        if reason == '{"code":"invalid_credentials","message":"You entered the wrong credentials. Please ensure that your login/password is correct."}':
+            print('Invalid email or password.')
+        else:
+            print('\nConnection timeout...')
+            print(f'{reason}')
+        return None, None, False
 
 def purchase_with_gale(API, marker, input_value, direction, expiration, type, gale_quantity, gale_multiplier, bot, chat_id):
     for attempt in range(gale_quantity):
