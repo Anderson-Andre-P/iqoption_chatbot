@@ -17,14 +17,13 @@ def connect_iq_option(email, password, account_type):
 
 def purchase_with_gale(API, marker, input_value, direction, expiration, type, gale_quantity, gale_multiplier, bot, chat_id):
     for attempt in range(gale_quantity):
-        if user_choices.get(chat_id, {}).get("stop_command_triggered"):
+        stop_command = user_choices.get(chat_id, {}).get("stop_command_triggered")
+        if stop_command:
             break
         if type == 'digital' or type == 'binary':
             check, id = API.buy_digital_spot_v2(marker, input_value, direction, expiration)
         else:
             check, id = API.buy(input_value, marker, direction, expiration)
-
-        # print(f'CHECK {check}')
 
         if check:
             while True:
@@ -46,5 +45,7 @@ def purchase_with_gale(API, marker, input_value, direction, expiration, type, ga
             return {"result": "Error opening order.\n\nThe position value is greater than allowed in the configuration.\n\nUse the /reset_purchase command and start the purchase process again with valid data."}
 
         input_value *= gale_multiplier
-
-    return {"result": "Maximum amount of Gale reached."}
+    if stop_command:
+        return {"result": "Gale's strategy was paused due to the /stop command."}
+    else:
+        return {"result": "Maximum amount of Gale reached."}
