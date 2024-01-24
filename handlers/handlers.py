@@ -96,6 +96,7 @@ def handle_purchase(bot):
     def command(message):
         from telegram_bot import execute_purchase, process_marker_step
         chat_id = message.chat.id
+        user_choices[chat_id]["stop_command_triggered"] = False
 
         if chat_id not in user_credentials:
             bot.reply_to(message, "You need to connect first. Use /connect to connect.")
@@ -348,6 +349,8 @@ def handle_stop(bot):
         if not user_data or "iq_api_instance" not in user_data:
             bot.reply_to(message, "Você não está conectado. Por favor, use /connect para se conectar.")
             return
+        
+        user_choices[chat_id]["stop_command_triggered"] = True
         API = user_data["iq_api_instance"]
         close_all_positions(API, bot, chat_id)
         bot.reply_to(message, "Todas as operações foram interrompidas.")

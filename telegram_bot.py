@@ -444,7 +444,7 @@ def process_candle_time(call):
 
 
 def close_all_positions(api_instance, bot, chat_id):
-    instrument_types = ["binary", "cfd", "forex", "crypto", "digital-option", "turbo"]
+    instrument_types = ["cfd", "forex", "crypto", "digital-option"]
     
     for instrument_type in instrument_types:
         status, positions_data = api_instance.get_positions(instrument_type)

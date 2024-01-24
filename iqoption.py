@@ -1,5 +1,6 @@
 import time
 from iqoptionapi.stable_api import IQ_Option
+from state import user_choices
 
 def connect_iq_option(email, password, account_type):
     API = IQ_Option(email, password)
@@ -16,15 +17,19 @@ def connect_iq_option(email, password, account_type):
 
 def purchase_with_gale(API, marker, input_value, direction, expiration, type, gale_quantity, gale_multiplier, bot, chat_id):
     for attempt in range(gale_quantity):
+        if user_choices.get(chat_id, {}).get("stop_command_triggered"):
+            break
         if type == 'digital' or type == 'binary':
             check, id = API.buy_digital_spot_v2(marker, input_value, direction, expiration)
         else:
             check, id = API.buy(input_value, marker, direction, expiration)
 
+        # print(f'CHECK {check}')
+
         if check:
             while True:
                 time.sleep(0.1)
-                status, result = API.check_win_digital_v2(id) if type == 'digital' else API.check_win_v4(id)
+                status, result = API.check_win_digital_v2(id) if type == 'digital' or 'binary' else API.check_win_v4(id)
 
                 if status:
                     if result > 0:
