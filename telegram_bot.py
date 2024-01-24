@@ -3,9 +3,11 @@ from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeybo
 import config
 import iqoption
 from utils import choose_candle_time
-from handlers.handlers import handle_connect, handle_expiration, handle_informations, handle_reset_purchase, handle_send_all_commands, handle_send_help, handle_show_ready_list, handle_start_create_ready_list, handle_test_connection_status, handle_tutorial, handle_use_ready_list, send_all_credentials, send_email_credentials, send_password_credentials, handle_purchase, handle_disconnect, reset_credentials, send_welcome, handle_get_last_purchase
+from handlers.handlers import handle_connect, handle_expiration, handle_informations, handle_reset_purchase, handle_send_all_commands, handle_send_help, handle_show_ready_list, handle_start_create_ready_list, handle_stop, handle_test_connection_status, handle_tutorial, handle_use_ready_list, send_all_credentials, send_email_credentials, send_password_credentials, handle_purchase, handle_disconnect, reset_credentials, send_welcome, handle_get_last_purchase
 from state import *
 from ready_list import ready_lists
+
+import time
  
 bot = telebot.TeleBot(config.API_TOKEN)
 
@@ -27,6 +29,8 @@ def register_handlers():
     bot.message_handler(commands=['choose_candle_time'])(handle_expiration(bot))
     bot.message_handler(commands=['create_ready_list'])(handle_start_create_ready_list(bot))
     bot.message_handler(commands=['get_last_purchase'])(handle_get_last_purchase(bot))
+
+    bot.message_handler(commands=['stop'])(handle_stop(bot))
 
     # The two commands below do not work correctly. They delete user data, but when trying to connect again, you can pass any value in email and password that the bot accepts.
     bot.message_handler(commands=['disconnect'])(handle_disconnect(bot))
@@ -211,7 +215,7 @@ def handle_direction_choice(call):
 
     bot.send_message(chat_id, "Please choose the purchase type:", reply_markup=markup)
 
-@bot.callback_query_handler(func=lambda call: call.data in ["binary", "digital"])
+@bot.callback_query_handler(func=lambda call: call.data in ['binary', 'digital'])
 def handle_purchase_type_choice(call):
     chat_id = call.message.chat.id
     purchase_type = call.data
@@ -437,6 +441,37 @@ def process_candle_time(call):
         ask_gale_quantity(call.message, chat_id, list_name)
     except ValueError:
         bot.send_message(chat_id, "Invalid candle time. Please enter a number.")
+
+
+def close_all_positions(api_instance, bot, chat_id):
+    instrument_types = ["binary", "cfd", "forex", "crypto", "digital-option", "turbo"]
+    
+    for instrument_type in instrument_types:
+        status, positions_data = api_instance.get_positions(instrument_type)
+        
+        print(f'{instrument_type} POSITIONS: {positions_data}\n')
+
+        if status and positions_data and 'positions' in positions_data:
+            positions = positions_data['positions']
+            for position in positions:
+                if isinstance(position, dict) and 'id' in position:
+                    position_id = position['id']
+                    print(f'Found POSITION ID: {position_id} for type {instrument_type}')
+
+                    try:
+                        if instrument_type == 'digital-option':
+                            api_instance.sell_digital_option(position_id)
+                            print(f'Attempting to close Option with 1 {position_id}...')
+                        else:
+                            api_instance.sell_option(position_id)
+                            print(f'Attempting to close Option with 2 {position_id}...')
+                    except Exception as e:
+                        print(f'Error closing option {position_id} for type {instrument_type}: {e}')
+
+    # print("Completed attempt to close all open options.")
+    # print("\n----------------------------------------------------------------------------------------------------------------------------------------------------------------\n")
+    bot.send_message(chat_id, "Tentativa de fechar todas as opções abertas concluída.")
+
 
 @bot.message_handler(func=lambda message: True)
 def echo_message(message):

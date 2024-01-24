@@ -338,3 +338,18 @@ def handle_get_last_purchase(bot):
 
         bot.reply_to(message, response_message)
     return command
+
+def handle_stop(bot):
+    def command(message):
+        from telegram_bot import close_all_positions
+        
+        chat_id = message.chat.id
+        user_data = user_credentials.get(chat_id)
+        if not user_data or "iq_api_instance" not in user_data:
+            bot.reply_to(message, "Você não está conectado. Por favor, use /connect para se conectar.")
+            return
+        API = user_data["iq_api_instance"]
+        close_all_positions(API, bot, chat_id)
+        bot.reply_to(message, "Todas as operações foram interrompidas.")
+
+    return command

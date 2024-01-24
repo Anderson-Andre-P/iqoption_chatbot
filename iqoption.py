@@ -16,7 +16,7 @@ def connect_iq_option(email, password, account_type):
 
 def purchase_with_gale(API, marker, input_value, direction, expiration, type, gale_quantity, gale_multiplier, bot, chat_id):
     for attempt in range(gale_quantity):
-        if type == 'digital':
+        if type == 'digital' or type == 'binary':
             check, id = API.buy_digital_spot_v2(marker, input_value, direction, expiration)
         else:
             check, id = API.buy(input_value, marker, direction, expiration)
