@@ -470,7 +470,7 @@ def close_all_positions(api_instance, bot, chat_id):
 
     # print("Completed attempt to close all open options.")
     # print("\n----------------------------------------------------------------------------------------------------------------------------------------------------------------\n")
-    bot.send_message(chat_id, "Tentativa de fechar todas as opções abertas concluída.")
+    bot.send_message(chat_id, "Attempt to close all open options completed.")
 
 
 @bot.message_handler(func=lambda message: True)

@@ -347,12 +347,12 @@ def handle_stop(bot):
         chat_id = message.chat.id
         user_data = user_credentials.get(chat_id)
         if not user_data or "iq_api_instance" not in user_data:
-            bot.reply_to(message, "Você não está conectado. Por favor, use /connect para se conectar.")
+            bot.reply_to(message, "You are not connected. Please use /connect to connect.")
             return
         
         user_choices[chat_id]["stop_command_triggered"] = True
         API = user_data["iq_api_instance"]
         close_all_positions(API, bot, chat_id)
-        bot.reply_to(message, "Todas as operações foram interrompidas.")
+        bot.reply_to(message, "All operations have been halted.")
 
     return command
