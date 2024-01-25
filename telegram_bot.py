@@ -3,7 +3,7 @@ from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeybo
 import config
 import iqoption
 from utils import choose_candle_time
-from handlers.handlers import handle_connect, handle_expiration, handle_informations, handle_reset_purchase, handle_send_all_commands, handle_send_help, handle_show_ready_list, handle_start_create_ready_list, handle_stop, handle_test_connection_status, handle_tutorial, handle_use_ready_list, send_all_credentials, send_email_credentials, send_password_credentials, handle_purchase, handle_disconnect, reset_credentials, send_welcome, handle_get_last_purchase
+from handlers.handlers import handle_connect, handle_expiration, handle_get_resume, handle_informations, handle_reset_purchase, handle_send_all_commands, handle_send_help, handle_show_ready_list, handle_start_create_ready_list, handle_stop, handle_test_connection_status, handle_tutorial, handle_use_ready_list, send_all_credentials, send_email_credentials, send_password_credentials, handle_purchase, handle_disconnect, reset_credentials, send_welcome, handle_get_last_purchase
 from state import *
 from ready_list import ready_lists
 
@@ -31,6 +31,8 @@ def register_handlers():
     bot.message_handler(commands=['get_last_purchase'])(handle_get_last_purchase(bot))
 
     bot.message_handler(commands=['stop'])(handle_stop(bot))
+    
+    bot.message_handler(commands=['get_resume'])(handle_get_resume(bot))
 
     # The two commands below do not work correctly. They delete user data, but when trying to connect again, you can pass any value in email and password that the bot accepts.
     bot.message_handler(commands=['disconnect'])(handle_disconnect(bot))
@@ -134,7 +136,8 @@ def process_account_choice_step(message, choice):
 
 def execute_purchase(chat_id):
     purchase_params = user_purchase_params.get(chat_id, {})
-    
+    user_operation_results = user_results.get(chat_id, {"win": 0, "loss": 0, "draw": 0})
+
     required_params = ["marker", "input_value", "direction", "type", "gale_quantity", "gale_multiplier", "candle_time"]
     if not all(param in purchase_params for param in required_params):
         bot.send_message(chat_id, "Incomplete purchase parameters. Please use /use_ready_list or set parameters manually.")
@@ -157,14 +160,19 @@ def execute_purchase(chat_id):
         bot.send_message(chat_id, "You are not connected. Please use /connect to connect.")
         return
 
-    user_data = user_credentials.get(chat_id)
     API = user_data.get("iq_api_instance") if user_data else None
     if not API:
         bot.send_message(chat_id, "API connection is not established. Please reconnect.")
         return
 
+    if chat_id not in user_results:
+        user_results[chat_id] = {"win": 0, "loss": 0, "draw": 0}
+
     result = iqoption.purchase_with_gale(API, marker, input_value, direction, candle_time, type, gale_quantity, gale_multiplier, bot, chat_id)
-    
+
+    if 'status' in result and 'amount' in result:
+        user_results[chat_id][result['status']] += result['amount']
+
     bot.send_message(chat_id, result["result"])
 
 def process_marker_step(message):
@@ -449,29 +457,21 @@ def close_all_positions(api_instance, bot, chat_id):
     for instrument_type in instrument_types:
         status, positions_data = api_instance.get_positions(instrument_type)
         
-        print(f'{instrument_type} POSITIONS: {positions_data}\n')
-
         if status and positions_data and 'positions' in positions_data:
             positions = positions_data['positions']
             for position in positions:
                 if isinstance(position, dict) and 'id' in position:
                     position_id = position['id']
-                    print(f'Found POSITION ID: {position_id} for type {instrument_type}')
 
                     try:
                         if instrument_type == 'digital-option':
                             api_instance.sell_digital_option(position_id)
-                            print(f'Attempting to close Option with 1 {position_id}...')
                         else:
                             api_instance.sell_option(position_id)
-                            print(f'Attempting to close Option with 2 {position_id}...')
                     except Exception as e:
                         print(f'Error closing option {position_id} for type {instrument_type}: {e}')
 
-    # print("Completed attempt to close all open options.")
-    # print("\n----------------------------------------------------------------------------------------------------------------------------------------------------------------\n")
     bot.send_message(chat_id, "Attempt to close all open options completed.")
-
 
 @bot.message_handler(func=lambda message: True)
 def echo_message(message):

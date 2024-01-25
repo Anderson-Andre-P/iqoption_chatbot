@@ -356,3 +356,28 @@ def handle_stop(bot):
         bot.reply_to(message, "All operations have been halted.")
 
     return command
+
+def handle_get_resume(bot):
+    def command(message):
+        chat_id = message.chat.id
+        # print(f'USER RESULTS: {user_results}')
+        
+        if chat_id in user_results:
+            results = user_results[chat_id]
+            total_win = results.get('win', 0)
+            total_loss = results.get('loss', 0)
+            total_draw = results.get('draw', 0)
+            total_result = total_win + total_loss
+            if total_result > 0:
+                resume_message = f"Win ${round(total_result, 2)}. ✅"
+            elif total_result < 0:
+                resume_message = f"Loss ${round(total_result, 2)}. ❌"        
+            else:
+                resume_message = f"Draw. 🔷"
+        else:
+            resume_message = "No operations performed yet."
+            
+        sumary_of_operations = 'Summary of your operations\n\n'
+        
+        bot.reply_to(message, (sumary_of_operations + resume_message))
+    return command
