@@ -16,7 +16,6 @@ def connect_iq_option(email, password, account_type):
         return None, None, False
 
 def purchase_with_gale(API, marker, input_value, direction, expiration, type, gale_quantity, gale_multiplier, bot, chat_id):
-    # user_operation_results = user_results.get(chat_id, {"win": 0, "loss": 0, "draw": 0})
     if chat_id not in user_results:
         user_results[chat_id] = {"win": 0, "loss": 0, "draw": 0}
 
@@ -24,6 +23,7 @@ def purchase_with_gale(API, marker, input_value, direction, expiration, type, ga
     
     for attempt in range(gale_quantity):
         stop_command = user_choices.get(chat_id, {}).get("stop_command_triggered")
+        
         if stop_command:
             break
 
@@ -39,6 +39,7 @@ def purchase_with_gale(API, marker, input_value, direction, expiration, type, ga
 
                 if status:
                     if result > 0:
+                        print(f'RESULTS in win: {result}')
                         user_operation_results["win"] += result
                         return {"result": f"✅ Operation With Gain ✅\nValue: ${round(result, 2)}.", "amount": round(result, 2), "status": "win"}
                     elif result == 0:
@@ -46,7 +47,7 @@ def purchase_with_gale(API, marker, input_value, direction, expiration, type, ga
                         return {"result": f"🔷 Operation With Draw 🔷\nValue: ${round(result, 2)}.", "amount": round(result, 2), "status": "draw"}
                     else:
                         loss_amount = abs(result)
-                        user_operation_results["loss"] -= loss_amount
+                        user_operation_results["loss"] += loss_amount
                         loss_info = f"❌ Operation With Loss ❌\nValue: -${round(loss_amount, 2)}\nRemaining Attempts: {gale_quantity - attempt - 1}\nMultiplier: {gale_multiplier}"
                         bot.send_message(chat_id, loss_info)
                         break
@@ -57,7 +58,7 @@ def purchase_with_gale(API, marker, input_value, direction, expiration, type, ga
         input_value *= gale_multiplier
 
     user_results[chat_id] = user_operation_results
-
+    
     if stop_command:
         return {"result": "Gale's strategy was paused due to the /stop command.", "status": "paused"}
     else:

@@ -136,7 +136,6 @@ def process_account_choice_step(message, choice):
 
 def execute_purchase(chat_id):
     purchase_params = user_purchase_params.get(chat_id, {})
-    user_operation_results = user_results.get(chat_id, {"win": 0, "loss": 0, "draw": 0})
 
     required_params = ["marker", "input_value", "direction", "type", "gale_quantity", "gale_multiplier", "candle_time"]
     if not all(param in purchase_params for param in required_params):
@@ -156,11 +155,13 @@ def execute_purchase(chat_id):
         return
 
     user_data = user_credentials.get(chat_id)
+    
     if not user_data:
         bot.send_message(chat_id, "You are not connected. Please use /connect to connect.")
         return
 
     API = user_data.get("iq_api_instance") if user_data else None
+    
     if not API:
         bot.send_message(chat_id, "API connection is not established. Please reconnect.")
         return
@@ -169,9 +170,6 @@ def execute_purchase(chat_id):
         user_results[chat_id] = {"win": 0, "loss": 0, "draw": 0}
 
     result = iqoption.purchase_with_gale(API, marker, input_value, direction, candle_time, type, gale_quantity, gale_multiplier, bot, chat_id)
-
-    if 'status' in result and 'amount' in result:
-        user_results[chat_id][result['status']] += result['amount']
 
     bot.send_message(chat_id, result["result"])
 
