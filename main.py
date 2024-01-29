@@ -1,12 +1,17 @@
-import os
 from flask import Flask
 import telegram_bot
 import config
 
 app = Flask(__name__)
 
+@app.route('/')
+def index():
+    return "Hello, World!"
+
+def run_bot():
+    telegram_bot.bot.polling(none_stop=True)
+
 if __name__ == '__main__':
-    if os.getenv('RUN_BOT', 'False') == 'True':
-        telegram_bot.bot.polling(none_stop=True)
-    if os.getenv('RUN_FLASK', 'False') == 'True':
-        app.run(debug=True)
+    run_bot()
+
+    app.run(debug=True)
