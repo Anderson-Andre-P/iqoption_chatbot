@@ -3,3 +3,4 @@ __pycache__
 bot_2.py
 /venv
 config.py
+.env
