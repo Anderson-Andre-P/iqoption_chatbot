@@ -2,3 +2,4 @@ Flask
 iqoptionapi
 python-telegram-bot
 Procfile
+telebot
