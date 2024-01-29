@@ -1,0 +1,4 @@
+Flask
+iqoptionapi
+python-telegram-bot
+dotenv

@@ -1,6 +1,5 @@
 config.env
 __pycache__
 bot_2.py
-requirements.txt
 /venv
 config.py
