@@ -14,4 +14,4 @@ def run_bot():
 if __name__ == '__main__':
     run_bot()
 
-    app.run(debug=True)
+    app.run(debug=False)

@@ -1,7 +1,6 @@
 Flask
 iqoptionapi
 python-telegram-bot
-Procfile
 telebot
-websocket
+websocket-client
 python-dotenv
