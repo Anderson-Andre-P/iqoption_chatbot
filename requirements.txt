@@ -4,3 +4,4 @@ python-telegram-bot
 Procfile
 telebot
 websocket
+python-dotenv
